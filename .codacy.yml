@@ -1,0 +1,8 @@
+---
+exclude_paths:
+  - 't1dgrs2/_version.py'
+  - 'tests/**/*'
+  - 'tests/*'
+  - 'benchmarks/**/*'
+  - 'setup.py'
+  - 'versioneer.py'

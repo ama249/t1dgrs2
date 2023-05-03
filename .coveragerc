@@ -1,0 +1,7 @@
+[report]
+omit =
+    setup.py
+    t1dgrs2/__main__.py
+    t1dgrs2/_version.py
+    versioneer.py
+    tests/*
