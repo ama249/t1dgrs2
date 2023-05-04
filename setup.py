@@ -22,17 +22,18 @@ setup(
     author_email="A.M.Arni@exeter.ac.uk",
     url="https://github.com/ama249/t1dgrs2",
     packages=["t1dgrs2"],
-    entry_points={
-        "console_scripts": [
-            "t1dgrs2=t1dgrs2.cli:cli"
-        ]
-    },
-    python_requires='>=3.11.0',
+    # entry_points={
+    #     "console_scripts": [
+    #         "t1dgrs2=t1dgrs2.cli:cli"
+    #     ]
+    # },
+    python_requires=">=3.11.0",
     install_requires=requirements,
+    include_package_data=True,
     keywords="t1dgrs2",
     classifiers=[
         "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: POSIX :: Linux",
-    ]
+    ],
 )

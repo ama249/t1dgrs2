@@ -1,1 +1,2 @@
 include versioneer.py
+include t1dgrs2/logger_settings.yml

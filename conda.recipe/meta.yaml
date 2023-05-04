@@ -25,11 +25,12 @@ build:
 requirements:
   # if you need compilers, uncomment these
   #    read more at https://docs.conda.io/projects/conda-build/en/latest/resources/compiler-tools.html
-  # build:
-  #   - {{ compilers("c") }}
   host:
     - python ==3.11
     - pip
+  # build:
+  #   - python {{ python }}
+  #   - numpy {{ numpy }}
   run:
     - python
     # dependencies are defined in setup.py
