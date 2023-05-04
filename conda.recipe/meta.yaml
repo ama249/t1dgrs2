@@ -6,7 +6,7 @@ package:
   version: {{ version }}
 
 source:
-  path: ../
+  path: https://github.com/ama249/t1dgrs2/archive/refs/tags/0.1.0.tar.gz
   sha256: checksum-value
 
 build:
@@ -30,9 +30,10 @@ requirements:
   host:
     - python ==3.11
     - pip
-  # build:
-  #   - python {{ python }}
-  #   - numpy {{ numpy }}
+    - setuptools
+  build:
+    - python
+    - setuptools
   run:
     - python
     # dependencies are defined in setup.py
