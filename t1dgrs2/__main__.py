@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 
 from t1dgrs2 import common, score, metrics, _EXIT_MSG, __version__
 
-LOG = getLogger(__name__)
+_LOG = getLogger(__name__)
 
 
 def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
@@ -19,7 +19,7 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
         - config_file (str) : Path to the configuration file containing required variables for script execution.
         - plink_out (str) : PLINK --out argument value. Defaults to './output'.
     """
-    LOG.debug(
+    _LOG.debug(
         f"Running main(plink_bfile='{plink_bfile}', config_file='{config_file}', plink_out='{plink_out}')"
     )
     try:
@@ -27,15 +27,15 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
             config = safe_load(f)
         os.makedirs(os.path.dirname(plink_out), exist_ok=True)
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
         exit(1)
 
     df_vmap = score.fix_variant_alleles(
-        rdqfile=config["input"]["dq_rank"],
+        rdqfile=os.path.realpath(config["input"]["dq_rank"]),
         bfile=plink_bfile,
         ofile=plink_out,
-        mfile=config["input"]["hla_map"],
+        mfile=os.path.realpath(config["input"]["hla_map"]),
     )
     df_vmap.attrs["name"] = "Mapping & frequency data"
     df_dosage = score.create_dosage_table(
@@ -43,7 +43,7 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
     )
     df_dosage.attrs["name"] = "Dosage data for all mapped alleles"
     dosage_file = os.path.realpath(f"{plink_out}_dosage.tsv")
-    LOG.info(f"Writing dosage data to '{dosage_file}'")
+    _LOG.info(f"Writing dosage data to '{dosage_file}'")
     df_dosage.to_csv(
         dosage_file, sep="\t", na_rep="", header=True, index=False, encoding="UTF-8"
     )
@@ -52,7 +52,7 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
     )
     df_geno.attrs["name"] = "Genotype calls for all mapped alleles"
     geno_file = os.path.realpath(f"{plink_out}_DQ_calls.tsv")
-    LOG.info(f"Writing DQ calls data to '{geno_file}'")
+    _LOG.info(f"Writing DQ calls data to '{geno_file}'")
     df_geno.to_csv(
         geno_file, sep="\t", na_rep="", header=True, index=False, encoding="UTF-8"
     )
@@ -60,10 +60,10 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
         df_geno=df_geno,
         bfile=plink_bfile,
         ofile=plink_out,
-        rdqfile=config["input"]["dq_rank"],
-        sc_int=config["scores"]["interaction"],
-        sc_plink=config["scores"]["plink"],
-        sc_dq_plink=config["scores"]["dq_plink"]
+        rdqfile=os.path.realpath(config["input"]["dq_rank"]),
+        sc_int=os.path.realpath(config["scores"]["interaction"]),
+        sc_plink=os.path.realpath(config["scores"]["plink"]),
+        sc_dq_plink=os.path.realpath(config["scores"]["dq_plink"])
         if "dq_plink" in config["scores"].keys()
         else "",
     )
@@ -71,30 +71,32 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
 
     if "metrics" in config:
         df_scores = metrics.retrieve_centiles(
-            df_scores=df_scores, rfile=config["metrics"]["centiles_file"]
+            df_scores=df_scores,
+            rfile=os.path.realpath(config["metrics"]["centiles_file"]),
         )
         df_scores.attrs[
             "name"
         ] = "Calculated GRS, centiles and PPV for all given variants"
         df_scores = metrics.calculate_probs(
-            df_scores=df_scores, ffile=config["metrics"]["params_file"]
+            df_scores=df_scores,
+            ffile=os.path.realpath(config["metrics"]["params_file"]),
         )
         df_scores.attrs[
             "name"
         ] = "Calculated GRS, centiles, PPV and probability for all given variants"
 
     results_file = os.path.realpath(f"{plink_out}_RESULTS.tsv")
-    LOG.info(f"Writing results to '{results_file}'")
+    _LOG.info(f"Writing results to '{results_file}'")
     df_scores.to_csv(
         results_file, sep="\t", na_rep="", header=True, index=False, encoding="UTF-8"
     )
 
 
 if __name__ == "__main__":
-    LOG.info(f"Started module execution: '{__package__}'")
+    _LOG.info(f"Started module execution: '{__package__}'")
     parser = ArgumentParser(
         prog=f"python -m {__package__}",
-        description="Generate a T1D GRS accounting for HLA-DQ interaction terms."
+        description="Generate a T1D GRS accounting for HLA-DQ interaction terms.",
     )
     parser.add_argument(
         "-b",
@@ -127,7 +129,7 @@ if __name__ == "__main__":
         "--version",
         action="version",
         help="Show the conda-prefix-replacement version number and exit.",
-        version="%(prog)s : "+__version__,
+        version="%(prog)s : " + __version__,
     )
     args = parser.parse_args()
     try:
@@ -137,8 +139,8 @@ if __name__ == "__main__":
             plink_out=args.plink_out,
         )
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
         exit(1)
     finally:
-        LOG.info(f"Completed module execution: '{__package__}'")
+        _LOG.info(f"Completed module execution: '{__package__}'")

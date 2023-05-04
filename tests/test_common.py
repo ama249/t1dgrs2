@@ -22,14 +22,14 @@ def test_plink_version() -> None:
 
 
 @pytest.fixture
-def output_file(tmp_path) -> str:
-    testfile = os.path.join(tmp_path, "TESTFILE.txt")
-    with open(testfile, "w") as fp:
-        fp.write("testing")
-    return testfile
+def temp_directory(tmp_path):
+    return tmp_path
 
 
-def test_delete_files(output_file):
-    with pytest.raises(FileNotFoundError) as e:
-        common.delete_files(output_file)
-        os.stat(output_file)
+def test_delete_files_within(temp_directory) -> None:
+    with pytest.raises(Exception) as e:
+        testfile = os.path.join(temp_directory, "TESTFILE.txt")
+        with open(testfile, "w") as fp:
+            fp.write("testing")
+        common.delete_files_within(dirpath=temp_directory, pattern="TESTFILE")
+        os.stat(testfile)

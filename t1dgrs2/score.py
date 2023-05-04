@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
 # Standard imports
-import os
-import re
-import pandas as pd
-from sys import exit
-from numpy import arange
-from logging import getLogger
-from numpy import rint, ubyte as UBYTE
+import os as _os
+import re as _re
+import pandas as _pd
+from sys import exit as _exit
+from numpy import arange as _arange
+from logging import getLogger as _getLogger
+from numpy import rint as _rint, ubyte as _UBYTE
 
 # Module imports
-from . import common, _EXIT_MSG
+from . import common as _common, _EXIT_MSG
 
-LOG = getLogger(__name__)
+_LOG = _getLogger(__name__)
 
 
-def _apply_fix_variant_alleles(row: pd.Series) -> pd.Series | None:
+def _apply_fix_variant_alleles(row: _pd.Series) -> _pd.Series | None:
     """For each variant in the mapping data, determine the final score allele.
 
     Args:
@@ -24,7 +24,7 @@ def _apply_fix_variant_alleles(row: pd.Series) -> pd.Series | None:
     Returns:
         pandas.Series | None : Row containing the final score allele for that variant.
     """
-    if pd.isna(row["A1_freq"]) or row["A1_map"] in [row["A1_freq"], row["A2"]]:
+    if _pd.isna(row["A1_freq"]) or row["A1_map"] in [row["A1_freq"], row["A2"]]:
         return row["A1_map"]
     # score allele is shorter indel sequence but there is no data for longer one
     elif row["A1_map"] == "-" and row["A1_freq"] == "0" and len(row["A2"]) == 1:
@@ -57,7 +57,7 @@ def _apply_fix_variant_alleles(row: pd.Series) -> pd.Series | None:
         return None
 
 
-def _apply_get_geno_call_alleles(row: pd.Series, max_calls: int) -> list[str]:
+def _apply_get_geno_call_alleles(row: _pd.Series, max_calls: int) -> list[str]:
     """For each DQ allele genotype count per individual, calculate the first N rank-ordered DQ allele names (with or without repetition).
 
     Args:
@@ -80,7 +80,7 @@ def _apply_get_geno_call_alleles(row: pd.Series, max_calls: int) -> list[str]:
 
 def fix_variant_alleles(
     rdqfile: str, bfile: str, ofile: str, mfile: str
-) -> pd.DataFrame:
+) -> _pd.DataFrame:
     """Reconcile mapping data from the configuration with the --freq report of the given PLINK --bfile.
 
     Args:
@@ -92,42 +92,42 @@ def fix_variant_alleles(
     Returns:
         pandas.DataFrame : Contains the combination of both mapping and frequency data.
     """
-    LOG.debug(
+    _LOG.debug(
         f"Executing: fix_variant_alleles(rdqfile='{rdqfile}', bfile='{bfile}', ofile='{ofile}', mfile='{mfile}')"
     )
-    LOG.info("Generating PLINK frequency report")
-    ofile_dir: str = os.path.dirname(ofile)
-    ofile_name: str = os.path.basename(ofile)
+    _LOG.info("Generating PLINK frequency report")
+    ofile_dir: str = _os.path.dirname(ofile)
+    ofile_name: str = _os.path.basename(ofile)
     temp_path: str = f"{ofile_dir}/temp_{ofile_name}"
     command = f"plink --bfile '{bfile}' --freq --out '{temp_path}'"
-    _: str = common.run_shell_cmd(cmd=command)  # return value not used here
+    _: str = _common.run_shell_cmd(cmd=command)  # return value not used here
     try:
-        df_rdq: pd.DataFrame = pd.read_csv(rdqfile, sep="\t", usecols=["DQ", "RANK"])
-        df_freq: pd.DataFrame = pd.read_csv(
+        df_rdq: _pd.DataFrame = _pd.read_csv(rdqfile, sep="\t", usecols=["DQ", "RANK"])
+        df_freq: _pd.DataFrame = _pd.read_csv(
             f"{temp_path}.frq",
             sep="\s+",
             usecols=["CHR", "SNP", "A1", "A2", "MAF", "NCHROBS"],
         )
         df_freq.attrs["name"] = "PLINK --freq output"
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
-    LOG.info("Combining mapping file data with frequency report data")
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
+    _LOG.info("Combining mapping file data with frequency report data")
     try:
-        df_map: pd.DataFrame = pd.read_csv(
+        df_map: _pd.DataFrame = _pd.read_csv(
             mfile, sep="\t", usecols=["ALLELE", "SNP", "A1"]
         )
         df_map.attrs["name"] = "Mapping file containing score allele"
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
-    df_vmap: pd.DataFrame = df_map.merge(
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
+    df_vmap: _pd.DataFrame = df_map.merge(
         df_freq, how="left", on="SNP", suffixes=("_map", "_freq")
     )
     df_vmap["A1"] = df_vmap.apply(_apply_fix_variant_alleles, axis=1)
-    LOG.info("Sorting mapped variants by DQ rank order")
+    _LOG.info("Sorting mapped variants by DQ rank order")
     df_vmap = (
         df_vmap.merge(df_rdq, how="left", left_on="ALLELE", right_on="DQ")
         .drop(columns=["DQ"])
@@ -137,7 +137,9 @@ def fix_variant_alleles(
     return df_vmap
 
 
-def create_dosage_table(df_vmap: pd.DataFrame, bfile: str, ofile: str) -> pd.DataFrame:
+def create_dosage_table(
+    df_vmap: _pd.DataFrame, bfile: str, ofile: str
+) -> _pd.DataFrame:
     """Calculate per individual allele dosage from the mapping data.
 
     Args:
@@ -148,17 +150,17 @@ def create_dosage_table(df_vmap: pd.DataFrame, bfile: str, ofile: str) -> pd.Dat
     Returns:
         pandas.DataFrame : Contains the per individual allelic dosage values.
     """
-    LOG.debug(
+    _LOG.debug(
         f"""Executing: create_dosage_table(df_vmap='{df_vmap.attrs["name"]}', bfile='{bfile}', ofile='{ofile}')"""
     )
-    LOG.info("Creating dosage table based on data from mapping & frequency report")
-    ofile_dir: str = os.path.dirname(ofile)
-    ofile_name: str = os.path.basename(ofile)
+    _LOG.info("Creating dosage table based on data from mapping & frequency report")
+    ofile_dir: str = _os.path.dirname(ofile)
+    ofile_name: str = _os.path.basename(ofile)
     temp_path: str = f"{ofile_dir}/temp_{ofile_name}"
-    df_scores: pd.DataFrame = df_vmap[["SNP", "A1"]].copy(deep=True)
+    df_scores: _pd.DataFrame = df_vmap[["SNP", "A1"]].copy(deep=True)
     df_scores["VAL"] = 1
-    df_rngqty: pd.DataFrame = df_vmap[["SNP", "RANK"]].copy(deep=True)
-    df_rngbound: pd.DataFrame = df_rngqty.copy(deep=True)
+    df_rngqty: _pd.DataFrame = df_vmap[["SNP", "RANK"]].copy(deep=True)
+    df_rngbound: _pd.DataFrame = df_rngqty.copy(deep=True)
     df_rngbound["LOW"], df_rngbound["HIGH"] = (
         df_rngbound["RANK"] - 0.5,
         df_rngbound["RANK"] + 0.5,
@@ -179,32 +181,32 @@ def create_dosage_table(df_vmap: pd.DataFrame, bfile: str, ofile: str) -> pd.Dat
             encoding="UTF-8",
         )
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
     command: str = (
         f"plink --bfile '{bfile}' --score '{temp_path}.scores' no-mean-imputation "
         + f"--q-score-range '{temp_path}.rngbound' '{temp_path}.rngqty' --out '{temp_path}'"
     )
-    _: str = common.run_shell_cmd(cmd=command)  # return value not used here
-    qscore_file_rgx: re.Pattern[str] = re.compile(f"{temp_path}\.(\S+)\.profile$")
+    _: str = _common.run_shell_cmd(cmd=command)  # return value not used here
+    qscore_file_rgx: _re.Pattern[str] = _re.compile(f"{temp_path}\.(\S+)\.profile$")
     qscore_alleles_map: dict[str, str] = {}
-    for r, _, fs in os.walk(ofile_dir):
+    for r, _, fs in _os.walk(ofile_dir):
         for f in fs:
-            qscore_file: str = os.path.join(r, f)
-            m: re.Match[str] | None = re.search(qscore_file_rgx, qscore_file)
+            qscore_file: str = _os.path.join(r, f)
+            m: _re.Match[str] | None = _re.search(qscore_file_rgx, qscore_file)
             if m is not None:
                 qscore_alleles_map[
                     df_vmap.loc[df_vmap["SNP"] == m.group(1), "ALLELE"].item()
                 ] = qscore_file
-    LOG.info(
+    _LOG.info(
         "Concatenating range score profiles for each mapping DQ allele into a single table"
     )
-    df_dosage: pd.DataFrame = None
+    df_dosage: _pd.DataFrame = None
     try:
         for qscore_allele, qscore_file in qscore_alleles_map.items():
             if df_dosage is None:
-                df_dosage: pd.DataFrame = pd.read_csv(
+                df_dosage: _pd.DataFrame = _pd.read_csv(
                     qscore_file,
                     sep="\s+",
                     usecols=["FID", "IID", "SCORE"],
@@ -212,7 +214,7 @@ def create_dosage_table(df_vmap: pd.DataFrame, bfile: str, ofile: str) -> pd.Dat
                 )
                 df_dosage.rename(columns={"SCORE": qscore_allele}, inplace=True)
             else:
-                df_dosage_temp: pd.DataFrame = pd.read_csv(
+                df_dosage_temp: _pd.DataFrame = _pd.read_csv(
                     qscore_file,
                     sep="\s+",
                     usecols=["FID", "IID", "SCORE"],
@@ -224,26 +226,26 @@ def create_dosage_table(df_vmap: pd.DataFrame, bfile: str, ofile: str) -> pd.Dat
                 )
                 del df_dosage_temp
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
     vmap_alleles: list[str] = df_vmap["ALLELE"].to_list()
     qscore_alleles: list[str] = list(qscore_alleles_map.keys())
     # Get elements present in vmap_alleles but not in qscore_alleles, i.e., list(vmap_alleles) - list(qscore_alleles)
     no_qscore_alleles: list[str] = list(
         set(vmap_alleles).difference(set(qscore_alleles))
     )
-    LOG.info("Converting dosage data to genotype data")
+    _LOG.info("Converting dosage data to genotype data")
     df_dosage[no_qscore_alleles] = 0.0
     df_dosage = df_dosage[["FID", "IID"] + vmap_alleles]
-    df_dosage[vmap_alleles] = rint(df_dosage[vmap_alleles] * 2).astype(UBYTE)
-    common.delete_files(path=ofile_dir, pattern=temp_path)
+    df_dosage[vmap_alleles] = _rint(df_dosage[vmap_alleles] * 2).astype(_UBYTE)
+    _common.delete_files_within(dirpath=ofile_dir, pattern=temp_path)
     return df_dosage
 
 
 def get_geno_call_alleles(
-    df_dsg: pd.DataFrame, alleles: list[str], max_calls: int = 2
-) -> pd.DataFrame:
+    df_dsg: _pd.DataFrame, alleles: list[str], max_calls: int = 2
+) -> _pd.DataFrame:
     """Obtain DQ allele names from per individual genotype counts.
 
     Args:
@@ -255,30 +257,30 @@ def get_geno_call_alleles(
         pandas.DataFrame : Contains the DQ allele calls per individual (with or without repetition).
     """
     max_calls = 2
-    LOG.debug(
+    _LOG.debug(
         f"""Executing: get_geno_call_alleles(df_dsg='{df_dsg.attrs["name"]}', alleles={alleles}, max_calls={max_calls})"""
     )
-    LOG.info("Retrieving genotype calls for mapping alleles")
-    df_geno: pd.DataFrame = df_dsg[["FID", "IID"]].copy(deep=True)
+    _LOG.info("Retrieving genotype calls for mapping alleles")
+    df_geno: _pd.DataFrame = df_dsg[["FID", "IID"]].copy(deep=True)
     # max_calls = df_dsg[alleles].max(axis=0).max()
     df_geno["CALLS"] = df_dsg[alleles].apply(
         _apply_get_geno_call_alleles, max_calls=max_calls, axis=1
     )
-    df_geno[["GENO1", "GENO2"]] = pd.DataFrame(
+    df_geno[["GENO1", "GENO2"]] = _pd.DataFrame(
         df_geno["CALLS"].tolist(), index=df_geno.index
     )
     return df_geno
 
 
 def generate_grs(
-    df_geno: pd.DataFrame,
+    df_geno: _pd.DataFrame,
     bfile: str,
     ofile: str,
     rdqfile: str,
     sc_int: str,
     sc_plink: str,
     sc_dq_plink: str = "",
-) -> pd.DataFrame:
+) -> _pd.DataFrame:
     """Calculate the T1DGRS2 from the given PLINK --bfile, DQ allele genotype calls, and all relevant scoring data.
 
     Args:
@@ -293,31 +295,31 @@ def generate_grs(
     Returns:
         pandas.DataFrame : Contains the per individual T1DGRS2 values.
     """
-    LOG.debug(
+    _LOG.debug(
         f"""Executing: generate_grs(df_geno='{df_geno.attrs["name"]}', bfile='{bfile}', ofile='{ofile}', rdqfile='{rdqfile}', sc_int='{sc_int}', sc_plink='{sc_plink}', sc_dq_plink='{sc_dq_plink}')"""
     )
-    ofile_dir: str = os.path.dirname(ofile)
-    ofile_name: str = os.path.basename(ofile)
+    ofile_dir: str = _os.path.dirname(ofile)
+    ofile_name: str = _os.path.basename(ofile)
     temp_path: str = f"{ofile_dir}/temp_{ofile_name}"
     try:
-        df_rdq: pd.DataFrame = pd.read_csv(rdqfile, sep="\t", usecols=["DQ", "RANK"])
-        df_sc_int: pd.DataFrame = pd.read_csv(
+        df_rdq: _pd.DataFrame = _pd.read_csv(rdqfile, sep="\t", usecols=["DQ", "RANK"])
+        df_sc_int: _pd.DataFrame = _pd.read_csv(
             sc_int, sep="\t", usecols=["ALLELE1", "ALLELE2", "BETA"]
         )
         df_sc_int.attrs["name"] = "Mapped DQ allele variants interaction scores"
-        df_sc_plink: pd.DataFrame = pd.read_csv(
+        df_sc_plink: _pd.DataFrame = _pd.read_csv(
             sc_plink, sep="\t", usecols=["ID", "ALLELE", "BETA"]
         )
         df_sc_plink.attrs["name"] = "All variants PLINK scores"
-        df_sc_dq_plink: pd.DataFrame = pd.read_csv(
+        df_sc_dq_plink: _pd.DataFrame = _pd.read_csv(
             sc_dq_plink, sep="\t", usecols=["ID", "ALLELE", "BETA"]
         )
         df_sc_dq_plink.attrs["name"] = "Mapped DQ allele variants PLINK scores"
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
-    LOG.info("Retrieving scores for interacting DQ alleles")
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
+    _LOG.info("Retrieving scores for interacting DQ alleles")
     allele_cols = sorted(
         df_sc_int.columns[df_sc_int.columns.str.startswith("ALLELE")].to_list()
     )
@@ -325,7 +327,9 @@ def generate_grs(
         df_geno.columns[df_geno.columns.str.startswith("GENO")].to_list()
     )
     # Operations to rank-order DQ allele interations from the interactions score file
-    df_sc_int["SNO"] = arange(start=1, stop=len(df_sc_int.index) + 1, step=1, dtype=int)
+    df_sc_int["SNO"] = _arange(
+        start=1, stop=len(df_sc_int.index) + 1, step=1, dtype=int
+    )
     df_sc_int_long = df_sc_int.melt(
         id_vars=["SNO"], value_vars=allele_cols
     ).reset_index(drop=True)
@@ -354,20 +358,20 @@ def generate_grs(
         .reset_index(drop=True)
     )
     del df_sc_int_long, df_sc_int_mod
-    df_scores: pd.DataFrame = (
+    df_scores: _pd.DataFrame = (
         df_geno[["FID", "IID"] + geno_cols]
         .merge(df_sc_int, how="left", left_on=geno_cols, right_on=allele_cols)
         .drop(columns=geno_cols + allele_cols)
         .fillna({"BETA": 0})
         .reset_index(drop=True)
     )
-    LOG.info("Computing SCORE based on interaction terms & weights for all variants")
+    _LOG.info("Computing SCORE based on interaction terms & weights for all variants")
     command: str = (
         f"plink --bfile '{bfile}' --score '{sc_plink}' 'header' sum --out '{temp_path}'"
     )
-    common.run_shell_cmd(cmd=command)
+    _common.run_shell_cmd(cmd=command)
     try:
-        df_sc_plink_calc = pd.read_csv(
+        df_sc_plink_calc = _pd.read_csv(
             f"{temp_path}.profile",
             sep="\s+",
             usecols=["FID", "IID", "SCORESUM"],
@@ -375,21 +379,21 @@ def generate_grs(
         )
         df_sc_plink_calc.rename(columns={"SCORESUM": "SCORESUM_plink"}, inplace=True)
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
     df_scores = df_scores.merge(
         df_sc_plink_calc, how="inner", on=["FID", "IID"]
     ).reset_index(drop=True)
     df_scores["SCORE"] = df_scores[["BETA", "SCORESUM_plink"]].sum(axis=1)
     if sc_dq_plink != "":
-        LOG.info(
+        _LOG.info(
             "Computing DQSCORE based on interaction terms & weights for DQ allele variants"
         )
         command: str = f"plink --bfile '{bfile}' --score '{sc_dq_plink}' 'header' sum --out '{temp_path}_dq'"
-        common.run_shell_cmd(cmd=command)
+        _common.run_shell_cmd(cmd=command)
         try:
-            df_sc_dq_plink_calc = pd.read_csv(
+            df_sc_dq_plink_calc = _pd.read_csv(
                 f"{temp_path}_dq.profile",
                 sep="\s+",
                 usecols=["FID", "IID", "SCORESUM"],
@@ -399,9 +403,9 @@ def generate_grs(
                 columns={"SCORESUM": "SCORESUM_dq_plink"}, inplace=True
             )
         except Exception as e:
-            LOG.exception(e)
-            LOG.error(_EXIT_MSG)
-            exit(1)
+            _LOG.exception(e)
+            _LOG.error(_EXIT_MSG)
+            _exit(1)
         df_scores = df_scores.merge(
             df_sc_dq_plink_calc,
             how="inner",
@@ -412,5 +416,5 @@ def generate_grs(
         [["BETA"], [col for col in df_scores.columns if col.startswith("SCORESUM")]], []
     )
     df_scores.drop(columns=score_cols_to_drop, inplace=True)
-    common.delete_files(path=ofile_dir, pattern=temp_path)
+    _common.delete_files_within(dirpath=ofile_dir, pattern=temp_path)
     return df_scores

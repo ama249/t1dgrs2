@@ -1,12 +1,12 @@
 ---
 input: # mandatory
-  hla_map: "data/input/T1D67_mapping.txt" # mandatory
-  dq_rank: "data/input/HLADQ_USAEuropean_Klitz.txt" # mandatory
+  hla_map: "/home/ama249/projects/t1dgrs2/data/input/T1D67_mapping.txt" # mandatory
+  dq_rank: "/home/ama249/projects/t1dgrs2/data/input/HLADQ_USAEuropean_Klitz.txt" # mandatory
   max_dq_calls: 2 # optional
 scores: # mandatory
-  interaction: "data/input/T1D67_int_scores.txt" # mandatory
-  plink: "data/input/T1D67_plink_scores.txt" # mandatory
-  dq_plink: "data/input/T1D67_plink_DQscores.txt" # optional
+  interaction: "/home/ama249/projects/t1dgrs2/data/input/T1D67_int_scores.txt" # mandatory
+  plink: "/home/ama249/projects/t1dgrs2/data/input/T1D67_plink_scores.txt" # mandatory
+  dq_plink: "/home/ama249/projects/t1dgrs2/data/input/T1D67_plink_DQscores.txt" # optional
 metrics: # optional
-  centiles_file: "data/input/UKBB_T1D67_ROC.txt" # optional
-  params_file: "data/input/UKBB_T1D67_Fit.txt" # optional
+  centiles_file: "/home/ama249/projects/t1dgrs2/data/input/UKBB_T1D67_ROC.txt" # optional
+  params_file: "/home/ama249/projects/t1dgrs2/data/input/UKBB_T1D67_Fit.txt" # optional

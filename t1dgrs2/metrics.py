@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
 # Standard imports
-import pandas as pd
-from sys import exit
-from logging import getLogger
-from numpy import exp, nan as NAN
+import pandas as _pd
+from sys import exit as _exit
+from logging import getLogger as _getLogger
+from numpy import exp as _exp, nan as _NAN
 
 # Module imports
 from . import _EXIT_MSG
 
-LOG = getLogger(__name__)
+_LOG = _getLogger(__name__)
 
 
-def retrieve_centiles(df_scores: pd.DataFrame, rfile: str) -> pd.DataFrame:
+def retrieve_centiles(df_scores: _pd.DataFrame, rfile: str) -> _pd.DataFrame:
     """Retrieve and assign pre-computed control/case centile values for each individual with a calculated T1DGRS2.
 
     Args:
@@ -22,14 +22,14 @@ def retrieve_centiles(df_scores: pd.DataFrame, rfile: str) -> pd.DataFrame:
     Returns:
         pandas.DataFrame : Updated with control/case centiles and PPV values per individual.
     """
-    LOG.debug(
+    _LOG.debug(
         f"""Executing: retrieve_centiles(df_scores='{df_scores.attrs["name"]}', rfile: str)"""
     )
-    LOG.info(
+    _LOG.info(
         "Retrieving and assigning pre-computed control/case centiles per individual T1DGRS2"
     )
     try:
-        df_roc: pd.DataFrame = pd.read_csv(
+        df_roc: _pd.DataFrame = _pd.read_csv(
             rfile,
             sep="\t",
             usecols=["threshold", "CtrlPCentile", "CasePCentile", "PPV"],
@@ -42,22 +42,22 @@ def retrieve_centiles(df_scores: pd.DataFrame, rfile: str) -> pd.DataFrame:
         df_roc["SOURCE"] = "ROCFILE"
         df_scores["SOURCE"] = "SCOREFILE"
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
-    df_roc_temp: pd.DataFrame = (
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
+    df_roc_temp: _pd.DataFrame = (
         df_roc[["threshold", "SOURCE"]]
         .copy(deep=True)
         .rename(columns={"threshold": "SCORE"})
     )
-    df_roc_temp[["FID", "IID"]] = pd.DataFrame(columns=["FID", "IID"], dtype="str")
-    df_roc_temp["DQSCORE"] = NAN
+    df_roc_temp[["FID", "IID"]] = _pd.DataFrame(columns=["FID", "IID"], dtype="str")
+    df_roc_temp["DQSCORE"] = _NAN
     df_roc_temp = df_roc_temp[["SOURCE", "FID", "IID", "SCORE", "DQSCORE"]]
-    df_scores_temp: pd.DataFrame = df_scores[
+    df_scores_temp: _pd.DataFrame = df_scores[
         ["SOURCE", "FID", "IID", "SCORE", "DQSCORE"]
     ].copy(deep=True)
-    df_scores_upd: pd.DataFrame = (
-        pd.concat([df_roc_temp, df_scores_temp])
+    df_scores_upd: _pd.DataFrame = (
+        _pd.concat([df_roc_temp, df_scores_temp])
         .sort_values(by=["SCORE"])
         .reset_index(drop=True)
     )
@@ -85,7 +85,7 @@ def retrieve_centiles(df_scores: pd.DataFrame, rfile: str) -> pd.DataFrame:
     return df_scores_upd
 
 
-def calculate_probs(df_scores: pd.DataFrame, ffile: str) -> pd.DataFrame:
+def calculate_probs(df_scores: _pd.DataFrame, ffile: str) -> _pd.DataFrame:
     """Calculate the probability of individual being classified as a case, using pre-computed two-sample t-test statistics.
 
     Args:
@@ -95,24 +95,24 @@ def calculate_probs(df_scores: pd.DataFrame, ffile: str) -> pd.DataFrame:
     Returns:
         pandas.DataFrame : Updated with the per individual probabilities of being classified as a case.
     """
-    LOG.debug(
+    _LOG.debug(
         f"""Executing: calculate_probs(df_scores='{df_scores.attrs["name"]}', ffile: str)"""
     )
-    LOG.info(
+    _LOG.info(
         "Calculating the case probability per individual based on pre-computed two-sample t-test statistics"
     )
     try:
-        df_fit: pd.DataFrame = pd.read_csv(
+        df_fit: _pd.DataFrame = _pd.read_csv(
             ffile,
             sep="\t",
             usecols=["Param", "Estimate", "Std_Error", "t_value", "Pr_gt_t"],
         )
         df_fit.attrs["name"] = "Pre-computed two-sample t-test mid and b estimates"
     except Exception as e:
-        LOG.exception(e)
-        LOG.error(_EXIT_MSG)
-        exit(1)
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        _exit(1)
     b = df_fit.loc[df_fit["Param"] == "b", "Estimate"].item()
     mid = df_fit.loc[df_fit["Param"] == "mid", "Estimate"].item()
-    df_scores["PROB"] = 1.0 / (1.0 + exp(b * (mid - df_scores["SCORE"])))
+    df_scores["PROB"] = 1.0 / (1.0 + _exp(b * (mid - df_scores["SCORE"])))
     return df_scores
