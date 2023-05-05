@@ -1,45 +1,37 @@
-{% set data = load_setup_py_data() %}
-{% set version = data.get("version") %}
+{% set org = "t2diabetesgenes" %}
+{% set pkg_name = "t1dgrs2" %}
+{% set version = "0.1.0" %}
+{% set build_num = 0 %}
 
 package:
-  name: t1dgrs2
-  version: {{ version }}
+  name: "{{ pkg_name }}"
+  version: "{{ version }}"
 
 source:
-  path: https://github.com/ama249/t1dgrs2/archive/refs/tags/0.1.0.tar.gz
+  url: "https://github.com/{{ org }}/{{ pkg_name }}/archive/refs/tags/{{ version }}.tar.gz"
   sha256: checksum-value
 
 build:
-  # If the installation is complex, or different between Unix and Windows, use
-  # separate bld.bat and build.sh files instead of this key.  Add the line
-  # "skip: True  # [py<35]" (for example) to limit to Python 3.5 and newer, or
-  # "skip: True  # [not win]" to limit to Windows.
-  number: 0
-  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed -vv .
+  number: "{{ build_num }}"
+  script: "{{ PYTHON }} -m pip install --no-deps --ignore-installed -vv ."
   noarch: python
-  
-  # entry_points:
-  #   {% for entry in data["entry_points"]["console_scripts"] %}
-  #     - {{ entry.split("=")[0].strip() }} = {{ entry.split("=")[1].strip() }}
-  #   {% endfor %}
-  
 
 requirements:
-  # if you need compilers, uncomment these
-  #    read more at https://docs.conda.io/projects/conda-build/en/latest/resources/compiler-tools.html
   host:
-    - python ==3.11
+    - python >=3.11
     - pip
     - setuptools
-  build:
-    - python
-    - setuptools
   run:
-    - python
-    # dependencies are defined in setup.py
-    {% for dep in data["install_requires"] %}
-    - {{ dep.lower() }}
-    {% endfor %}
+    - python >=3.11
+    - numpy ==1.24.*
+    - pandas ==1.5.*
+    - pytest ==7.3.*
+    - pyyaml ==6.0.*
+    - scipy ==1.10.*
+    - setuptools ==67.6.*
+    - wheel ==0.40.*
+    - plink
+
 
 test:
   source_files:
@@ -51,7 +43,7 @@ test:
     - pytest
 
 about:
-  home: https://github.com/ama249/t1dgrs2
+  home: "https://github.com/{{ org }}/{{ pkg_name }}"
   license: GPLv3
   license_family: GPL
   license_file: LICENSE
