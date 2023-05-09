@@ -23,11 +23,11 @@ def test_plink_version() -> None:
 
 
 @pytest.fixture
-def temp_directory(tmp_path):
-    return os.path.join(tmp_path, uuid4)
+def temp_directory(tmp_path) -> str:
+    return os.path.join(tmp_path, str(uuid4()))
 
 
-def test_delete_files_within(temp_directory) -> None:
+def test_delete_files_within(temp_directory: str) -> None:
     with pytest.raises(Exception) as e:
         testfile = os.path.join(temp_directory, "TESTFILE.txt")
         with open(testfile, "w") as fp:
