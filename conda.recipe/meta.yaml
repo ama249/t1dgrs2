@@ -33,7 +33,6 @@ requirements:
     - wheel ==0.40.*
     - plink
 
-
 test:
   source_files:
     - tests

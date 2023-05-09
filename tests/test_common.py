@@ -1,6 +1,7 @@
 import os
 import pytest
 from re import search
+from uuid import uuid4
 from sys import platform
 
 from t1dgrs2 import common
@@ -23,7 +24,7 @@ def test_plink_version() -> None:
 
 @pytest.fixture
 def temp_directory(tmp_path):
-    return tmp_path
+    return os.path.join(tmp_path, uuid4)
 
 
 def test_delete_files_within(temp_directory) -> None:
