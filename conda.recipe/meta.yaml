@@ -21,6 +21,7 @@ requirements:
     - python >=3.11
     - pip
     - setuptools
+    - pyyaml ==6.0.*
   run:
     - python >=3.11
     - numpy ==1.24.*
