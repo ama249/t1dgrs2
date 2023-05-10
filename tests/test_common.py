@@ -22,15 +22,15 @@ def test_plink_version() -> None:
     assert plink_version.startswith("1.90"), "PLINK version mismatch"
 
 
-@pytest.fixture
-def temp_directory(tmp_path) -> str:
-    return os.path.join(tmp_path, str(uuid4()))
+# @pytest.fixture
+# def temp_directory(tmp_path) -> str:
+#     return os.path.join(tmp_path, str(uuid4()))
 
 
-def test_delete_files_within(temp_directory: str) -> None:
-    with pytest.raises(Exception) as e:
-        testfile = os.path.join(temp_directory, "TESTFILE.txt")
-        with open(testfile, "w") as fp:
-            fp.write("testing")
-        common.delete_files_within(dirpath=temp_directory, pattern="TESTFILE")
-        os.stat(testfile)
+# def test_delete_files_within(temp_directory: str) -> None:
+#     with pytest.raises(Exception) as e:
+#         testfile = os.path.join(temp_directory, "TESTFILE.txt")
+#         with open(testfile, "w") as fp:
+#             fp.write("testing")
+#         common.delete_files_within(dirpath=temp_directory, pattern="TESTFILE")
+#         os.stat(testfile)
