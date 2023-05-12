@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 
+"""Module containing the core logic for generating the T1DGRS2.
+
+This module contains the core methods to calculate allelic dosage, convert 
+the dosage to genotype hard calls, then compute the T1DGRS2 taking into account 
+HLA-DQ interaction scoring data.
+
+Methods:
+    - fix_variant_alleles : Reconcile mapping data from the configuration 
+    with the --freq report of the given PLINK --bfile.
+    - create_dosage_table : Calculate per individual allele dosage from the mapping data.
+    - get_geno_call_alleles : Obtain DQ allele names from per individual genotype counts.
+    - generate_grs : Calculate the T1DGRS2 from the given PLINK --bfile, DQ allele 
+    genotype calls, and all relevant scoring data.
+"""
+
 # Standard imports
 import os as _os
 import re as _re
@@ -19,7 +34,8 @@ def _apply_fix_variant_alleles(row: _pd.Series) -> _pd.Series | None:
     """For each variant in the mapping data, determine the final score allele.
 
     Args:
-        - row (pandas.Series) : Row from the mapping DataFrame with the required variant details.
+        - row (pandas.Series) : Row from the mapping DataFrame with the 
+        required variant details.
 
     Returns:
         pandas.Series | None : Row containing the final score allele for that variant.
@@ -58,14 +74,18 @@ def _apply_fix_variant_alleles(row: _pd.Series) -> _pd.Series | None:
 
 
 def _apply_get_geno_call_alleles(row: _pd.Series, max_calls: int) -> list[str]:
-    """For each DQ allele genotype count per individual, calculate the first N rank-ordered DQ allele names (with or without repetition).
+    """For each DQ allele genotype count per individual, calculate the 
+    first N rank-ordered DQ allele names (with or without repetition).
 
     Args:
-        - row (pandas.Series) : Row from the dosage DataFrame, with the rank-ordered DQ alleles as column names and the genotype counts as values.
-        - max_calls (int) : Maximum number of DQ allele calls considered per individual (excess calls are truncated).
+        - row (pandas.Series) : Row from the dosage DataFrame, with the 
+        rank-ordered DQ alleles as column names and the genotype counts as values.
+        - max_calls (int) : Maximum number of DQ allele calls considered 
+        per individual (excess calls are truncated).
 
     Returns:
-        list[str] : List with the first N DQ allele names per individual (right-padded with 'X' for empty calls), where 2 <= N <= max_calls.
+        list[str] : List with the first N DQ allele names per individual 
+        (right-padded with 'X' for empty calls), where 2 <= N <= max_calls.
     """
     data = row.loc[row > 0]
     data_serialise = [
@@ -81,19 +101,25 @@ def _apply_get_geno_call_alleles(row: _pd.Series, max_calls: int) -> list[str]:
 def fix_variant_alleles(
     rdqfile: str, bfile: str, ofile: str, mfile: str
 ) -> _pd.DataFrame:
-    """Reconcile mapping data from the configuration with the --freq report of the given PLINK --bfile.
+    """Reconcile mapping data from the configuration with the --freq 
+    report of the given PLINK --bfile.
 
     Args:
         - rdqfile (str) : Path to the DQ allele ranking file from the configuration.
         - bfile (str) : PLINK --bfile argument value.
         - ofile (str) : PLINK --out argument value.
-        - mfile (str) : Path to the mapping file containing the DQ allele name, variant ID, and score allele.
+        - mfile (str) : Path to the mapping file containing the DQ allele name, 
+        variant ID, and score allele.
 
     Returns:
         pandas.DataFrame : Contains the combination of both mapping and frequency data.
     """
     _LOG.debug(
-        f"Executing: fix_variant_alleles(rdqfile='{rdqfile}', bfile='{bfile}', ofile='{ofile}', mfile='{mfile}')"
+        f"Executing: fix_variant_alleles("
+        + f"rdqfile='{rdqfile}', "
+        + f"bfile='{bfile}', "
+        + f"ofile='{ofile}', "
+        + f"mfile='{mfile}')"
     )
     _LOG.info("Generating PLINK frequency report")
     ofile_dir: str = _os.path.dirname(ofile)
@@ -151,7 +177,9 @@ def create_dosage_table(
         pandas.DataFrame : Contains the per individual allelic dosage values.
     """
     _LOG.debug(
-        f"""Executing: create_dosage_table(df_vmap='{df_vmap.attrs["name"]}', bfile='{bfile}', ofile='{ofile}')"""
+        f"Executing: create_dosage_table("
+            + f"""df_vmap='{df_vmap.attrs["name"]}', """
+            + f"""bfile='{bfile}', ofile='{ofile}')"""
     )
     _LOG.info("Creating dosage table based on data from mapping & frequency report")
     ofile_dir: str = _os.path.dirname(ofile)
@@ -200,7 +228,8 @@ def create_dosage_table(
                     df_vmap.loc[df_vmap["SNP"] == m.group(1), "ALLELE"].item()
                 ] = qscore_file
     _LOG.info(
-        "Concatenating range score profiles for each mapping DQ allele into a single table"
+        "Concatenating range score profiles for each mapping DQ allele "
+            + "into a single table"
     )
     df_dosage: _pd.DataFrame = None
     try:
@@ -231,7 +260,8 @@ def create_dosage_table(
         _exit(1)
     vmap_alleles: list[str] = df_vmap["ALLELE"].to_list()
     qscore_alleles: list[str] = list(qscore_alleles_map.keys())
-    # Get elements present in vmap_alleles but not in qscore_alleles, i.e., list(vmap_alleles) - list(qscore_alleles)
+    # Get elements present in vmap_alleles but not in qscore_alleles, 
+    # i.e., list(vmap_alleles) - list(qscore_alleles)
     no_qscore_alleles: list[str] = list(
         set(vmap_alleles).difference(set(qscore_alleles))
     )
@@ -249,16 +279,22 @@ def get_geno_call_alleles(
     """Obtain DQ allele names from per individual genotype counts.
 
     Args:
-        - df_dsg (pandas.DataFrame) : Dosage data containing per individual and per DQ allele genotype counts.
-        - alleles (list[str]) : List of rank-ordered DQ allele names, taken from mapping file.
-        - max_calls (int, optional) : Maximum number of DQ allele calls to consider per individual. Requires max_calls >= 2 (default).
+        - df_dsg (pandas.DataFrame) : Dosage data containing per individual 
+        and per DQ allele genotype counts.
+        - alleles (list[str]) : List of rank-ordered DQ allele names, 
+        taken from mapping file.
+        - max_calls (int, optional) : Maximum number of DQ allele calls 
+        to consider per individual. Requires max_calls >= 2 (default).
 
     Returns:
-        pandas.DataFrame : Contains the DQ allele calls per individual (with or without repetition).
+        pandas.DataFrame : Contains the DQ allele calls per individual 
+        (with or without repetition).
     """
     max_calls = 2
     _LOG.debug(
-        f"""Executing: get_geno_call_alleles(df_dsg='{df_dsg.attrs["name"]}', alleles={alleles}, max_calls={max_calls})"""
+        "Executing: get_geno_call_alleles(" + \
+        f"""df_dsg='{df_dsg.attrs["name"]}', """ + \
+        f"""alleles={alleles}, max_calls={max_calls})"""
     )
     _LOG.info("Retrieving genotype calls for mapping alleles")
     df_geno: _pd.DataFrame = df_dsg[["FID", "IID"]].copy(deep=True)
@@ -281,28 +317,42 @@ def generate_grs(
     sc_plink: str,
     sc_dq_plink: str = "",
 ) -> _pd.DataFrame:
-    """Calculate the T1DGRS2 from the given PLINK --bfile, DQ allele genotype calls, and all relevant scoring data.
+    """Calculate the T1DGRS2 from the given PLINK --bfile, DQ allele 
+    genotype calls, and all relevant scoring data.
 
     Args:
         - df_geno (pandas.DataFrame) : Contains the DQ allele genotype calls.
         - bfile (str) : PLINK --bfile argument value.
         - ofile (str) : PLINK --out argument value.
         - rdqfile (str) : Path to the DQ allele ranking file from the configuration.
-        - sc_int (str) : Path to the DQ allele interaction score file from the configuration.
-        - sc_plink (str) : Path to the linear score file for all variants from the configuration.
-        - sc_dq_plink (str, optional) : Path to the linear score file for only the DQ allele variants. Will not be included in the final calculation if empty string (default).
+        - sc_int (str) : Path to the DQ allele interaction score file 
+        from the configuration.
+        - sc_plink (str) : Path to the linear score file for all variants 
+        from the configuration.
+        - sc_dq_plink (str, optional) : Path to the linear score file for only 
+        the DQ allele variants. Will not be included in the final calculation 
+        if empty string (default).
 
     Returns:
         pandas.DataFrame : Contains the per individual T1DGRS2 values.
     """
     _LOG.debug(
-        f"""Executing: generate_grs(df_geno='{df_geno.attrs["name"]}', bfile='{bfile}', ofile='{ofile}', rdqfile='{rdqfile}', sc_int='{sc_int}', sc_plink='{sc_plink}', sc_dq_plink='{sc_dq_plink}')"""
+        "Executing: generate_grs("
+            + f"""df_geno='{df_geno.attrs["name"]}', """
+            + f"""bfile='{bfile}', """
+            + f"""ofile='{ofile}', """
+            + f"""rdqfile='{rdqfile}', """
+            + f"""sc_int='{sc_int}', """
+            + f"""sc_plink='{sc_plink}', """
+            + f"""sc_dq_plink='{sc_dq_plink}')"""
     )
     ofile_dir: str = _os.path.dirname(ofile)
     ofile_name: str = _os.path.basename(ofile)
     temp_path: str = f"{ofile_dir}/temp_{ofile_name}"
     try:
-        df_rdq: _pd.DataFrame = _pd.read_csv(rdqfile, sep="\t", usecols=["DQ", "RANK"])
+        df_rdq: _pd.DataFrame = _pd.read_csv(
+            rdqfile, sep="\t", usecols=["DQ", "RANK"]
+        )
         df_sc_int: _pd.DataFrame = _pd.read_csv(
             sc_int, sep="\t", usecols=["ALLELE1", "ALLELE2", "BETA"]
         )
@@ -343,9 +393,8 @@ def generate_grs(
         .transform("rank", method="first")
         .astype(int)
     )
-    df_sc_int_long["ALLELE_ORDER"] = "ALLELE" + df_sc_int_long["ALLELE_ORDER"].astype(
-        str
-    )
+    df_sc_int_long["ALLELE_ORDER"] = \
+        "ALLELE" + df_sc_int_long["ALLELE_ORDER"].astype(str)
     df_sc_int_mod = df_sc_int_long.pivot(
         index=["SNO"], columns=["ALLELE_ORDER"], values=["value"]
     ).reset_index()
@@ -390,7 +439,10 @@ def generate_grs(
         _LOG.info(
             "Computing DQSCORE based on interaction terms & weights for DQ allele variants"
         )
-        command: str = f"plink --bfile '{bfile}' --score '{sc_dq_plink}' 'header' sum --out '{temp_path}_dq'"
+        command: str = (
+            f"plink --bfile '{bfile}' --score '{sc_dq_plink}' 'header' "
+                + f"sum --out '{temp_path}_dq'"
+        )
         _common.run_shell_cmd(cmd=command)
         try:
             df_sc_dq_plink_calc = _pd.read_csv(

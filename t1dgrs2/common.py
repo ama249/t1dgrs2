@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 
+"""Module containing generic implementations.
+
+This module contains methods for logic that was used in the other modules
+of this package, but was found to be repeating.
+
+Methods:
+    - run_shell_cmd : Execute a given shell command.
+    - delete_files_within : Recursively delete files within a given path and an optional pattern.
+    - validate_plinkfiles : Helper function to validate PLINK .bed, .bim, .fam files given the --bfile argument value.
+    - validate_textfile : Helper function to validate a text-based file given its path.
+"""
+
 # Standard imports
 import os as _os
 from sys import exit as _exit

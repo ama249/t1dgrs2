@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
 
+"""Module containing the logic to calculate metrics after the T1DGRS2 generation.
+
+This module contains methods to calculate the case/control centile values, 
+positive predictive value (PPV) and the probability of being a case,
+for the calculated T1DGRS2 scores per individual.
+
+Methods:
+    - retrieve_centiles : Retrieve and assign pre-computed control/case 
+    centile values for each individual with a calculated T1DGRS2.
+    - calculate_probs : Calculate the probability of individual being classified 
+    as a case, using pre-computed two-sample t-test statistics.
+"""
+
 # Standard imports
 import pandas as _pd
 from sys import exit as _exit
@@ -13,11 +26,13 @@ _LOG = _getLogger(__name__)
 
 
 def retrieve_centiles(df_scores: _pd.DataFrame, rfile: str) -> _pd.DataFrame:
-    """Retrieve and assign pre-computed control/case centile values for each individual with a calculated T1DGRS2.
+    """Retrieve and assign pre-computed control/case centile values for 
+    each individual with a calculated T1DGRS2.
 
     Args:
         - df_scores (pandas.DataFrame) : Contains the calculated T1DGRS2 values.
-        - rfile (str) : Path to the ROC curve file containing control/case centiles and PPV data.
+        - rfile (str) : Path to the ROC curve file containing 
+        control/case centiles and PPV data.
 
     Returns:
         pandas.DataFrame : Updated with control/case centiles and PPV values per individual.
@@ -86,20 +101,23 @@ def retrieve_centiles(df_scores: _pd.DataFrame, rfile: str) -> _pd.DataFrame:
 
 
 def calculate_probs(df_scores: _pd.DataFrame, ffile: str) -> _pd.DataFrame:
-    """Calculate the probability of individual being classified as a case, using pre-computed two-sample t-test statistics.
+    """Calculate the probability of individual being classified as a case, 
+    using pre-computed two-sample t-test statistics.
 
     Args:
         - df_scores (pandas.DataFrame) : Contains the per individual T1DGRS2 scores.
         - ffile (str) : Path to the two-sample t-test statistics file.
 
     Returns:
-        pandas.DataFrame : Updated with the per individual probabilities of being classified as a case.
+        pandas.DataFrame : Updated with the per individual probabilities 
+        of being classified as a case.
     """
     _LOG.debug(
         f"""Executing: calculate_probs(df_scores='{df_scores.attrs["name"]}', ffile: str)"""
     )
     _LOG.info(
-        "Calculating the case probability per individual based on pre-computed two-sample t-test statistics"
+        "Calculating the case probability per individual based on "
+            + "pre-computed two-sample t-test statistics"
     )
     try:
         df_fit: _pd.DataFrame = _pd.read_csv(
