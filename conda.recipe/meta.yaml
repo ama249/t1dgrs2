@@ -30,7 +30,7 @@ requirements:
     - scipy ==1.10.*
     - setuptools ==67.6.*
     - wheel ==0.40.*
-    - plink ==1.90*
+    - plink
 
 test:
   source_files:
