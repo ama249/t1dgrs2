@@ -8,7 +8,7 @@ package:
   version: "{{ version }}"
 
 source:
-  url: "https://github.com/{{ org }}/{{ pkg_name }}/archive/refs/tags/{{ pkg_name }}-{{ version }}.tar.gz"
+  url: "https://github.com/{{ org }}/{{ pkg_name }}/archive/refs/tags/{{ version }}.tar.gz"
   sha256: checksum-value
 
 build:
