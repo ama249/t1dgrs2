@@ -127,19 +127,28 @@ if __name__ == "__main__":
         help="PLINK --out prefix (output file path & name, defaults to './output').",
     )
     parser.add_argument(
+        "--list",
+        action="store_true",
+        dest="check_list_variants",
+        help="List the T1DGRS2 input variants and exit.",
+    )
+    parser.add_argument(
         "-V",
         "--version",
         action="version",
-        help="Show the conda-prefix-replacement version number and exit.",
+        help="Show the conda-prefix-replacement package version number and exit.",
         version="%(prog)s : " + __version__,
     )
     args = parser.parse_args()
     try:
-        main(
-            plink_bfile=args.plink_bfile,
-            config_file=args.config_file,
-            plink_out=args.plink_out,
-        )
+        if args.check_list_variants:
+            common.list_variants(config_file=args.config_file)
+        else:
+            main(
+                plink_bfile=args.plink_bfile,
+                config_file=args.config_file,
+                plink_out=args.plink_out,
+            )
     except Exception as e:
         _LOG.exception(e)
         _LOG.error(_EXIT_MSG)

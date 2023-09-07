@@ -18,8 +18,13 @@ Methods:
 
 # Standard imports
 import os as _os
+from yaml import safe_load
 from logging import getLogger as _getLogger
-from pandas import DataFrame as _DataFrame, read_csv as _read_csv
+from pandas import (
+    DataFrame as _DataFrame,
+    read_csv as _read_csv,
+    option_context as _option_context,
+)
 from subprocess import run as _run, CalledProcessError as _CalledProcessError
 
 # Module imports
@@ -54,7 +59,7 @@ def delete_files_within(dirpath: str, pattern: str | None = None) -> None:
 
     Args:
         - dirpath (str) : Path under which files are to be deleted.
-        - pattern (str | None, optional) : Pattern to match against each file 
+        - pattern (str | None, optional) : Pattern to match against each file
         in order to delete it. Simply deletes all files if None (default).
     """
     _LOG.debug(
@@ -151,3 +156,35 @@ def read_dataframe(
         _LOG.exception(e)
         _LOG.error(_EXIT_MSG)
         raise e
+
+
+def list_variants(config_file: str) -> None:
+    try:
+        with open(config_file, mode="r", encoding="UTF-8") as f:
+            config = safe_load(f)
+    except Exception as e:
+        _LOG.exception(e)
+        _LOG.error(_EXIT_MSG)
+        exit(1)
+    variants_file = _os.path.realpath(config["variants"])
+    df_variants = read_dataframe(
+        file=variants_file,
+        sep="\t",
+        usecols=["ID", "TYPE", "ALLELE", "BETA", "GRCH37", "GRCH38"],
+        dtype={
+            "ID": str,
+            "TYPE": str,
+            "ALLELE": str,
+            "BETA": float,
+            "GRCH37": str,
+            "GRCH38": str,
+        },
+    )
+    with _option_context(
+        [
+            ("display.width", 120),
+            ("display.max_rows", None),
+            ("display.max_columns", None),
+        ]
+    ):
+        print(df_variants)
