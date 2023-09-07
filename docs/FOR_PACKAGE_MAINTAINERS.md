@@ -2,14 +2,18 @@
 
 ## Important information for maintainers: 
 
----
+### Note:
+* This Github repository has been configured to work with the Bioconda channel.
+* The most changes anticipated in the configuration file `t1dgrs2/conda.recipe/meta.yaml` would be for version number, and very rarely, the dependencies.
 
-### 1. Please create a separate `git` branch before make any changes
+### Please follow the guidelines below:
+
+### 1. Please create a separate `git` branch before make any changes:
 
 Use the following commands to create a new branch before starting to work on a new change:
 
 ```{bash}
-cd /path/to/local/clone/t1dgrs/
+cd /path/to/local/clone/t1dgrs2/
 git checkout main
 git pull
 git checkout -b NEW_BRANCH
@@ -17,23 +21,23 @@ git checkout -b NEW_BRANCH
 
 ---
 
-### 2. Please control all versioning of the package using GitHub repository tags
+### 2. Please control all versioning of the package using GitHub repository tags:
 
 Use the following commands to create a new tag on the ___main___ branch after a new change in ___NEW_BRANCH___ has been merged:
 
 ```{bash}
-cd /path/to/local/clone/t1dgrs/
+cd /path/to/local/clone/t1dgrs2/
 git checkout main
 git tag VERSION -a -m "Short message about the changes in the new version"
 git push origin --tags
 ```
 where ___VERSION___ follows the [PEP-440 convention for final releases](https://peps.python.org/pep-0440/#final-releases).
 
-> This same ___VERSION___ must also be put into the `set version = ""` command at the top of the `bioconda-recipes/recipes/t1dgrs2/meta.yaml` file before creating a pull request on the Bioconda Azure pipeline.
+> This same ___VERSION___ must also be put into the `set version = ""` command at the top of both `t1dgrs2/conda.recipe/meta.yaml` & `bioconda-recipes/recipes/t1dgrs2/meta.yaml` files before creating a pull request on the Bioconda Azure pipeline.
 
 ---
 
-### 3. To generate SHA-256 hash for `bioconda-recipes/recipes/t1dgrs2/meta.yaml`
+### 3. To generate SHA-256 hash for `bioconda-recipes/recipes/t1dgrs2/meta.yaml`:
 
 ```{bash}
 curl -sL https://github.com/<<ORG>>/t1dgrs2/archive/refs/tags/<<VERSION>>.tar.gz | openssl sha256
