@@ -48,12 +48,6 @@ def get_conda_metadata(conda_meta_file: str) -> dict:
 conda_metadata = get_conda_metadata("conda.recipe/meta.yaml")
 requirements = conda_metadata["requirements"]["run"]
 
-# Read in the requirements.txt file
-# with open("requirements.txt") as f:
-#     requirements = []
-#     for library in f.read().splitlines():
-#         requirements.append(library)
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
