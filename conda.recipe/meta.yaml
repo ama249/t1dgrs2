@@ -1,6 +1,6 @@
 {% set org = "t2diabetesgenes" %}
 {% set pkg_name = "t1dgrs2" %}
-{% set version = "0.1.0" %}
+{% set version = "0.1.1" %}
 {% set build_num = 0 %}
 
 package:
@@ -45,3 +45,4 @@ about:
   license_family: GPL
   license_file: LICENSE
   summary: Generate a Type 1 Diabetes Genetic Risk Score that accounts for interactions between HLA-DQ variants.
+  description: 'Short description and acknowledgements. For more details, please see the Github page README.'

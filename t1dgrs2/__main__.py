@@ -25,7 +25,9 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
     try:
         with open(config_file, mode="r", encoding="UTF-8") as f:
             config = safe_load(f)
-        os.makedirs(os.path.dirname(plink_out), exist_ok=True)
+        plink_out_check = True if os.sep in plink_out else False
+        if plink_out_check:
+            os.makedirs(os.path.dirname(plink_out), exist_ok=True)
     except Exception as e:
         _LOG.exception(e)
         _LOG.error(_EXIT_MSG)
@@ -62,9 +64,9 @@ def main(plink_bfile: str, config_file: str, plink_out: str) -> None:
         ofile=plink_out,
         rdqfile=os.path.realpath(config["input"]["dq_rank"]),
         sc_int=os.path.realpath(config["scores"]["interaction"]),
-        sc_plink=os.path.realpath(config["scores"]["plink"]),
-        sc_dq_plink=os.path.realpath(config["scores"]["dq_plink"])
-        if "dq_plink" in config["scores"].keys()
+        sc_plink_all=os.path.realpath(config["scores"]["all_variants"]),
+        sc_plink_hla=os.path.realpath(config["scores"]["hla_variants"])
+        if "hla_variants" in config["scores"].keys()
         else "",
     )
     df_scores.attrs["name"] = "Calculated GRS for all given variants"

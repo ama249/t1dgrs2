@@ -1,12 +1,12 @@
 ---
 input: # mandatory, all files in here are tab-delimited tabular data
-  hla_map: "/local/absolute/path/to/T1D67_mapping.txt"
-  dq_rank: "/local/absolute/path/to/HLADQ_USAEuropean_Klitz.txt"
+  hla_map: "/local/absolute/path/to/T1D67_mapping.tsv"
+  dq_rank: "/local/absolute/path/to/HLADQ_USAEuropean_Klitz.tsv"
   max_dq_calls: 2 # not implemented yet
 scores: # mandatory
-  interaction: "/local/absolute/path/to/T1D67_int_scores.txt"
-  plink: "/local/absolute/path/to/T1D67_plink_scores.txt"
-  dq_plink: "/local/absolute/path/to/T1D67_plink_DQscores.txt" # optional, will automatically exclude HLA-DQ BETAs from final calculation if this key-value pair is removed
+  interaction: "/local/absolute/path/to/T1D67_interaction_scores.tsv"
+  all_variants: "/local/absolute/path/to/T1D67_plink_all_scores.tsv"
+  hla_variants: "/local/absolute/path/to/T1D67_plink_hla_scores.tsv" # optional, will automatically exclude HLA BETAs from final calculation if this key-value pair is removed
 metrics: # optional, will not compute centiles, PPV or case probability if this key (and child key-value pairs) is removed
-  centiles_file: "/local/absolute/path/to/UKBB_T1D67_ROC.txt"
-  params_file: "/local/absolute/path/to/UKBB_T1D67_Fit.txt"
+  centiles_file: "/local/absolute/path/to/UKBB_T1D67_ROC.tsv"
+  params_file: "/local/absolute/path/to/UKBB_T1D67_Fit.tsv"

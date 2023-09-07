@@ -127,28 +127,19 @@ def fix_variant_alleles(
     temp_path: str = f"{ofile_dir}/temp_{ofile_name}"
     command = f"plink --bfile '{bfile}' --freq --out '{temp_path}'"
     _: str = _common.run_shell_cmd(cmd=command)  # return value not used here
-    try:
-        df_rdq: _pd.DataFrame = _pd.read_csv(rdqfile, sep="\t", usecols=["DQ", "RANK"])
-        df_freq: _pd.DataFrame = _pd.read_csv(
-            f"{temp_path}.frq",
-            sep="\s+",
-            usecols=["CHR", "SNP", "A1", "A2", "MAF", "NCHROBS"],
-        )
-        df_freq.attrs["name"] = "PLINK --freq output"
-    except Exception as e:
-        _LOG.exception(e)
-        _LOG.error(_EXIT_MSG)
-        _exit(1)
+    df_rdq: _pd.DataFrame = _common.read_dataframe(
+        rdqfile, sep="\t", usecols=["DQ", "RANK"]
+    )
+    df_freq: _pd.DataFrame = _common.read_dataframe(
+        f"{temp_path}.frq", sep="\\s+",
+        usecols=["CHR", "SNP", "A1", "A2", "MAF", "NCHROBS"]
+    )
+    df_freq.attrs["name"] = "PLINK --freq output"
     _LOG.info("Combining mapping file data with frequency report data")
-    try:
-        df_map: _pd.DataFrame = _pd.read_csv(
-            mfile, sep="\t", usecols=["ALLELE", "SNP", "A1"]
-        )
-        df_map.attrs["name"] = "Mapping file containing score allele"
-    except Exception as e:
-        _LOG.exception(e)
-        _LOG.error(_EXIT_MSG)
-        _exit(1)
+    df_map: _pd.DataFrame = _common.read_dataframe(
+        mfile, sep="\t", usecols=["ALLELE", "SNP", "A1"]
+    )
+    df_map.attrs["name"] = "Mapping file containing score allele"
     df_vmap: _pd.DataFrame = df_map.merge(
         df_freq, how="left", on="SNP", suffixes=("_map", "_freq")
     )
@@ -217,7 +208,7 @@ def create_dosage_table(
         + f"--q-score-range '{temp_path}.rngbound' '{temp_path}.rngqty' --out '{temp_path}'"
     )
     _: str = _common.run_shell_cmd(cmd=command)  # return value not used here
-    qscore_file_rgx: _re.Pattern[str] = _re.compile(f"{temp_path}\.(\S+)\.profile$")
+    qscore_file_rgx: _re.Pattern[str] = _re.compile(f"{temp_path}\\.(\\S+)\\.profile$")
     qscore_alleles_map: dict[str, str] = {}
     for r, _, fs in _os.walk(ofile_dir):
         for f in fs:
@@ -232,32 +223,27 @@ def create_dosage_table(
             + "into a single table"
     )
     df_dosage: _pd.DataFrame = None
-    try:
-        for qscore_allele, qscore_file in qscore_alleles_map.items():
-            if df_dosage is None:
-                df_dosage: _pd.DataFrame = _pd.read_csv(
-                    qscore_file,
-                    sep="\s+",
-                    usecols=["FID", "IID", "SCORE"],
-                    dtype={"FID": str, "IID": str},
-                )
-                df_dosage.rename(columns={"SCORE": qscore_allele}, inplace=True)
-            else:
-                df_dosage_temp: _pd.DataFrame = _pd.read_csv(
-                    qscore_file,
-                    sep="\s+",
-                    usecols=["FID", "IID", "SCORE"],
-                    dtype={"FID": str, "IID": str},
-                )
-                df_dosage_temp.rename(columns={"SCORE": qscore_allele}, inplace=True)
-                df_dosage = df_dosage.merge(
-                    df_dosage_temp, how="outer", on=["FID", "IID"]
-                )
-                del df_dosage_temp
-    except Exception as e:
-        _LOG.exception(e)
-        _LOG.error(_EXIT_MSG)
-        _exit(1)
+    for qscore_allele, qscore_file in qscore_alleles_map.items():
+        if df_dosage is None:
+            df_dosage: _pd.DataFrame = _common.read_dataframe(
+                qscore_file,
+                sep="\\s+",
+                usecols=["FID", "IID", "SCORE"],
+                dtype={"FID": str, "IID": str}
+            )
+            df_dosage.rename(columns={"SCORE": qscore_allele}, inplace=True)
+        else:
+            df_dosage_temp: _pd.DataFrame = _common.read_dataframe(
+                qscore_file,
+                sep="\\s+",
+                usecols=["FID", "IID", "SCORE"],
+                dtype={"FID": str, "IID": str}
+            )
+            df_dosage_temp.rename(columns={"SCORE": qscore_allele}, inplace=True)
+            df_dosage = df_dosage.merge(
+                df_dosage_temp, how="outer", on=["FID", "IID"]
+            )
+            del df_dosage_temp
     vmap_alleles: list[str] = df_vmap["ALLELE"].to_list()
     qscore_alleles: list[str] = list(qscore_alleles_map.keys())
     # Get elements present in vmap_alleles but not in qscore_alleles, 
@@ -314,8 +300,8 @@ def generate_grs(
     ofile: str,
     rdqfile: str,
     sc_int: str,
-    sc_plink: str,
-    sc_dq_plink: str = "",
+    sc_plink_all: str,
+    sc_plink_hla: str = "",
 ) -> _pd.DataFrame:
     """Calculate the T1DGRS2 from the given PLINK --bfile, DQ allele 
     genotype calls, and all relevant scoring data.
@@ -327,9 +313,9 @@ def generate_grs(
         - rdqfile (str) : Path to the DQ allele ranking file from the configuration.
         - sc_int (str) : Path to the DQ allele interaction score file 
         from the configuration.
-        - sc_plink (str) : Path to the linear score file for all variants 
+        - sc_plink_all (str) : Path to the linear score file for all variants 
         from the configuration.
-        - sc_dq_plink (str, optional) : Path to the linear score file for only 
+        - sc_plink_hla (str, optional) : Path to the linear score file for only 
         the DQ allele variants. Will not be included in the final calculation 
         if empty string (default).
 
@@ -343,32 +329,27 @@ def generate_grs(
             + f"""ofile='{ofile}', """
             + f"""rdqfile='{rdqfile}', """
             + f"""sc_int='{sc_int}', """
-            + f"""sc_plink='{sc_plink}', """
-            + f"""sc_dq_plink='{sc_dq_plink}')"""
+            + f"""sc_plink_all='{sc_plink_all}', """
+            + f"""sc_plink_hla='{sc_plink_hla}')"""
     )
     ofile_dir: str = _os.path.dirname(ofile)
     ofile_name: str = _os.path.basename(ofile)
     temp_path: str = f"{ofile_dir}/temp_{ofile_name}"
-    try:
-        df_rdq: _pd.DataFrame = _pd.read_csv(
-            rdqfile, sep="\t", usecols=["DQ", "RANK"]
-        )
-        df_sc_int: _pd.DataFrame = _pd.read_csv(
-            sc_int, sep="\t", usecols=["ALLELE1", "ALLELE2", "BETA"]
-        )
-        df_sc_int.attrs["name"] = "Mapped DQ allele variants interaction scores"
-        df_sc_plink: _pd.DataFrame = _pd.read_csv(
-            sc_plink, sep="\t", usecols=["ID", "ALLELE", "BETA"]
-        )
-        df_sc_plink.attrs["name"] = "All variants PLINK scores"
-        df_sc_dq_plink: _pd.DataFrame = _pd.read_csv(
-            sc_dq_plink, sep="\t", usecols=["ID", "ALLELE", "BETA"]
-        )
-        df_sc_dq_plink.attrs["name"] = "Mapped DQ allele variants PLINK scores"
-    except Exception as e:
-        _LOG.exception(e)
-        _LOG.error(_EXIT_MSG)
-        _exit(1)
+    df_rdq: _pd.DataFrame = _common.read_dataframe(
+        rdqfile, sep="\t", usecols=["DQ", "RANK"]
+    )
+    df_sc_int: _pd.DataFrame = _common.read_dataframe(
+        sc_int, sep="\t", usecols=["ALLELE1", "ALLELE2", "BETA"]
+    )
+    df_sc_int.attrs["name"] = "Mapped DQ allele variants interaction scores"
+    df_sc_plink_all: _pd.DataFrame = _common.read_dataframe(
+        sc_plink_all, sep="\t", usecols=["ID", "ALLELE", "BETA"]
+    )
+    df_sc_plink_all.attrs["name"] = "All variants PLINK scores"
+    df_sc_plink_hla: _pd.DataFrame = _common.read_dataframe(
+        sc_plink_hla, sep="\t", usecols=["ID", "ALLELE", "BETA"]
+    )
+    df_sc_plink_hla.attrs["name"] = "Mapped DQ allele variants PLINK scores"
     _LOG.info("Retrieving scores for interacting DQ alleles")
     allele_cols = sorted(
         df_sc_int.columns[df_sc_int.columns.str.startswith("ALLELE")].to_list()
@@ -416,48 +397,38 @@ def generate_grs(
     )
     _LOG.info("Computing SCORE based on interaction terms & weights for all variants")
     command: str = (
-        f"plink --bfile '{bfile}' --score '{sc_plink}' 'header' sum --out '{temp_path}'"
+        f"plink --bfile '{bfile}' --score '{sc_plink_all}' 'header' sum --out '{temp_path}'"
     )
     _common.run_shell_cmd(cmd=command)
-    try:
-        df_sc_plink_calc = _pd.read_csv(
-            f"{temp_path}.profile",
-            sep="\s+",
-            usecols=["FID", "IID", "SCORESUM"],
-            dtype={"FID": str, "IID": str},
-        )
-        df_sc_plink_calc.rename(columns={"SCORESUM": "SCORESUM_plink"}, inplace=True)
-    except Exception as e:
-        _LOG.exception(e)
-        _LOG.error(_EXIT_MSG)
-        _exit(1)
+    df_sc_plink_calc = _common.read_dataframe(
+        f"{temp_path}.profile",
+        sep="\\s+",
+        usecols=["FID", "IID", "SCORESUM"],
+        dtype={"FID": str, "IID": str},
+    )
+    df_sc_plink_calc.rename(columns={"SCORESUM": "SCORESUM_plink"}, inplace=True)
     df_scores = df_scores.merge(
         df_sc_plink_calc, how="inner", on=["FID", "IID"]
     ).reset_index(drop=True)
     df_scores["SCORE"] = df_scores[["BETA", "SCORESUM_plink"]].sum(axis=1)
-    if sc_dq_plink != "":
+    if sc_plink_hla != "":
         _LOG.info(
             "Computing DQSCORE based on interaction terms & weights for DQ allele variants"
         )
         command: str = (
-            f"plink --bfile '{bfile}' --score '{sc_dq_plink}' 'header' "
+            f"plink --bfile '{bfile}' --score '{sc_plink_hla}' 'header' "
                 + f"sum --out '{temp_path}_dq'"
         )
         _common.run_shell_cmd(cmd=command)
-        try:
-            df_sc_dq_plink_calc = _pd.read_csv(
-                f"{temp_path}_dq.profile",
-                sep="\s+",
-                usecols=["FID", "IID", "SCORESUM"],
-                dtype={"FID": str, "IID": str},
-            )
-            df_sc_dq_plink_calc.rename(
-                columns={"SCORESUM": "SCORESUM_dq_plink"}, inplace=True
-            )
-        except Exception as e:
-            _LOG.exception(e)
-            _LOG.error(_EXIT_MSG)
-            _exit(1)
+        df_sc_dq_plink_calc = _common.read_dataframe(
+            f"{temp_path}_dq.profile",
+            sep="\\s+",
+            usecols=["FID", "IID", "SCORESUM"],
+            dtype={"FID": str, "IID": str},
+        )
+        df_sc_dq_plink_calc.rename(
+            columns={"SCORESUM": "SCORESUM_dq_plink"}, inplace=True
+        )
         df_scores = df_scores.merge(
             df_sc_dq_plink_calc,
             how="inner",
