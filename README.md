@@ -8,6 +8,15 @@ This Python package can be used on both imputed genotyping array and next genera
 
 > Required: PLINK 1.9 fileset (.bed, .bim, .fam).
 
+## Contributors
+
+* Ankit Arni ([ORCid](https://orcid.org/0009-0005-0365-9235), [email](mailto:a.m.arni@exeter.ac.uk))
+* Diane Fraser ([ORCid](https://orcid.org/0000-0003-0988-8926), [email](mailto:d.p.fraser@exeter.ac.uk))
+* Seth Sharp ([ORCid](https://orcid.org/0000-0002-0607-9990), [email](mailto:ssharp@stanford.edu))
+* Richard Oram ([ORCid](https://orcid.org/0000-0003-3581-8980), [email](mailto:r.oram@exeter.ac.uk))
+* Michael Weedon ([ORCid](https://orcid.org/0000-0002-6174-6135), [email](mailto:m.n.weedon@exeter.ac.uk))
+* Kashyap Patel ([ORCid](https://orcid.org/0000-0002-9240-8104), [email](mailto:k.a.patel@exeter.ac.uk))
+
 ## References
 
 1. Oram RA, Patel K, Hill A, et al. (2016) A Type 1 Diabetes Genetic Risk Score Can Aid Discrimination Between Type 1 and Type 2 Diabetes in Young Adults. Diabetes Care 39(3): 337-344. [10.2337/dc15-1111](https://doi.org/10.2337/dc15-1111).
